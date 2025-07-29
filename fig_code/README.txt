@@ -1,0 +1,48 @@
+
+Figure N
+filname
+script
+
+Figure 1
+fig_GPSmooringsxbuoys_exmap_image.jpg
+fig_overviewmap.m
+
+Figure 2
+fig_mooringex_MO3_withSWOT_swh_karin_uncorr_patch.jpg
+fig_mooringobs_ex.m
+
+Figure 3
+swh_swotvsobs_nadir_buoysandmoorings_swh_karin_uncorr_patch_wproc_wcenternadir.jpg
+fig_scatters.m
+
+Figure 4
+fig_bias.png
+fig_formofthebias.m
+
+Figure 5
+fig_scatter_and_map_calval_dp.png
+fig_scatter_and_map.m
+
+Figure 6
+fig_structfunction_SWH_moorings_justmeters_fldnm-swh_model_data_2_one.jpg
+fig_structurefunction_hs.m
+
+Figure A1
+fig_2insitunoise_avs_Tavg_SWO3_simple_withSWOT_013-026_swh_karin_proc_patch_unsmoothed.jpg
+fig_insitunoisefloor.m
+
+Figure A2
+swot_vs_buoy_quality_vs_dist_and_hs.jpg
+fig_datacoverage.m
+
+Figure S1
+fig_mooringex_MO3_withSWOT_swh_karin_proc_patch_delta_allvariables.jpg
+fig_scatters.m
+
+Figure S2
+fig_scatter_and_map_science_dp.png
+fig_scatter_and_map.m
+
+Figure S3
+fig_drift.jpg
+fig_drift.m
