@@ -1,4 +1,4 @@
 # ignoring:
 *.sh
 *.nc
-
+/data/readme.md
