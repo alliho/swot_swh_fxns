@@ -1,1 +1,0 @@
-/Users/ajho/Documents/JPL/data/processed/GNSS_waves/GNSS_mooring_SWO5.nc
