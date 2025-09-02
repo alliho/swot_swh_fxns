@@ -1,4 +1,17 @@
 # ignoring:
 *.sh
 *.nc
+*.DS_Store
+*.mat
 /data/readme.md
+
+fig_code/fig_formofthebias.m
+fig_code/fig_mooringobs_ex.m
+#fig_code/fig_overviewmap.m
+fig_code/fig_scatter_and_map.m
+fig_code/fig_scatters.m
+fig_code/fig_structurefunction_hs.m
+fig_code/pmel_gps_mooring.png
+fig_code/setup_data.m
+
+
