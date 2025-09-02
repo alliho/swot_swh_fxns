@@ -10,7 +10,7 @@
 #fig_code/fig_overviewmap.m
 #fig_code/fig_scatter_and_map.m
 #fig_code/fig_scatters.m
-fig_code/fig_structurefunction_hs.m
+#fig_code/fig_structurefunction_hs.m
 fig_code/setup_data.m
 
 
