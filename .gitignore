@@ -5,7 +5,7 @@
 *.mat
 /data/readme.md
 
-fig_code/fig_formofthebias.m
+#fig_code/fig_formofthebias.m
 #fig_code/fig_mooringobs_ex.m
 #fig_code/fig_overviewmap.m
 fig_code/fig_scatter_and_map.m
