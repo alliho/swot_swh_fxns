@@ -15,6 +15,7 @@ swhopt = 0; sshopt = 0; wspopt = 0;
 modopt = 0; smoothopt = 0; rainopt = 0;
 patchopt = 0; corropt = 0; mskopt = 0; 
 dspkopt = 0;
+ptchsz = 3;
 
 if contains(fldnm, 'ssh'); sshopt = 1; end
 if contains(fldnm, 'swh'); swhopt = 1; end
@@ -30,7 +31,6 @@ addParameter(p, 'wind_speed', wspopt);
 addParameter(p, 'ssha', sshopt);
 addParameter(p, 'ssh', sshopt);
 addParameter(p, 'smooth', smoothopt);
-addParameter(p, 'minflag', minflag);
 addParameter(p, 'mindepth', mindepth);
 addParameter(p, 'ri', ri);
 addParameter(p, 'Lavg', Lavg);
@@ -38,6 +38,8 @@ addParameter(p, 'patch', patchopt);
 addParameter(p, 'correct', corropt);
 addParameter(p, 'mask', mskopt);
 addParameter(p, 'despike', dspkopt);
+addParameter(p, 'patchsize', ptchsz);
+addParameter(p, 'quality', 'good');
 parse(p, varargin{:});
 if p.Results.ssha~=sshopt
     sshopt = p.Results.ssha;
@@ -55,9 +57,10 @@ mskopt = p.Results.mask;
 ri = p.Results.ri;
 Lavg = p.Results.Lavg;
 mindepth = p.Results.mindepth;
-minflag = p.Results.minflag;
 smoothopt = p.Results.smooth;
 dspkopt = p.Results.despike;
+ptchsz = p.Results.patchsize;
+qualflag = p.Results.quality;
 
 if isa(mdl, 'NaN'); corropt = 0; end
 if patchopt==2; dspkopt=1; end
@@ -107,19 +110,31 @@ if mskopt
     
     if isfield(swot, [sfldnm '_qual'])
         quvar = swot.([sfldnm '_qual']);
-        msk(quvar > 0) = NaN;
+        quinfo = ncinfo([swot.fpath swot.fname], [sfldnm '_qual']);
+        flag_meanings = quinfo.Attributes(4).Value; flag_meanings = strsplit(flag_meanings);
+        flag_masks = quinfo.Attributes(5).Value;
         
-        if contains(sfldnm, 'swh_karin')
-            msk(isin(log2(quvar), [11 11.1], 'inclusive')) = 1; % gets rid of the calibration patches
-            msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
-        elseif contains(sfldnm, 'ssh') & contains(sfldnm, 'karin')
-            msk(isin(log2(quvar), [11 11.1], 'inclusive')) = 1; % gets rid of the calibration patches
-            % msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
+        if strcmp(qualflag, 'good')
+            msk(quvar > 0) = NaN;
+        else
+            % flag_heirarchy = {'suspect', 'degraded', 'bad'};
+            qq = find(contains(flag_meanings, qualflag));
+            maxflag = max(flag_masks(qq));
+            msk(quvar > maxflag) = NaN;
         end
+        
+        % if contains(sfldnm, 'swh_karin')
+        %     msk(isin(log2(quvar), [11 11.1], 'inclusive')) = 1; % gets rid of the calibration patches
+        %     msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
+        % elseif contains(sfldnm, 'ssh') & contains(sfldnm, 'karin')
+        %     msk(isin(log2(quvar), [11 11.1], 'inclusive')) = 1; % gets rid of the calibration patches
+        %     % msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
+        % end
     
         if mskopt>=2
             msk(isin(log2(quvar), [11 11.2], 'inclusive')) = 1; % gets rid of the calibration patches
-            if contains(sfldnm, 'swh_karin'); 
+            msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
+            if contains(sfldnm, 'swh_karin') & mskopt>=3  
                 msk(isin(log2(quvar), [7 7.2], 'inclusive')) = 1;
                 msk(isin(log2(quvar), [5 7], 'inclusive')) = 1; % gets rid of the rain patches..?
             end
@@ -185,7 +200,7 @@ if patchopt==1
     var = fillmissing2(var,"movmedian", ri);
 elseif patchopt==2
     % anomaly patching!!!
-    pi = 3; conn = 4; 
+    pi = ptchsz; conn = 4; 
     if contains(fldnm, 'swh'); 
         msk_anomalies = makeanomalymask(var, pi, conn);
         var = var.*msk_anomalies;

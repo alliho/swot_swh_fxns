@@ -169,6 +169,7 @@ while ti <= N
 
     if isempty(swot.time); ti = ti + 1; disp(['      ERROR: no data *** *** ***']); continue; end
     swot.fname = fnames(fi).name;
+    swot.fpath = fpath;
     try
         [swot.t0, swot.cycle, swot.pass, swot.processing, swot.orientation, swot.angle] = get_swot_info(swot, swot.fname);
     end

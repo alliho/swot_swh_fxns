@@ -1,6 +1,7 @@
 base_path = '/Users/ajho/Documents/JPL/';
 local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
 addpath([local_path 'swh_fxns/matlab/'])
+addpath([local_path 'fig_code/addfxns/'])
 swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
 
 %%% ADD DATA
@@ -8,14 +9,6 @@ load('/Users/ajho/Documents/myrepos/supportingdata/coastline_labeled.mat');
 
 %%% OTHER DEPENDENCIES:
 % m_map
-% gitsio/code_universal/*/
-    % isin.m
-    % plot_mcoast.m
-    % load_any_nc.m
-    % setfigsize.m
-    % drawbox.m
-% tight_subplot.m
-% AddLetters2Plots.m
 
 %% LOAD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%d
 
