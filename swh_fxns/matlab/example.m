@@ -6,7 +6,7 @@ swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
 
 %% LOAD SWOT
 % SWOT Expert Data has been downloaded to local folder |swot_fpath| via earthdata.nasa.gov
-latlims = [31 38]; lonlims = [-129 -123]; daterange = [datenum(2023,4,18) datenum(2023,4,21)];
+latlims = [31 38]; lonlims = [-129 -123]; daterange = [datenum(2023,4,18) datenum(2023,5,2)];
 SWOT = load_swot(swot_fpath,lonlims, latlims, daterange);
 
 %% PROCESS SWH DATA

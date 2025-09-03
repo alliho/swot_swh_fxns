@@ -6,6 +6,8 @@
 *.asv
 /data/readme.md
 
+/fig_code/addfxns/smpl_syncs.txt
+
 #fig_code/fig_formofthebias.m
 #fig_code/fig_mooringobs_ex.m
 #fig_code/fig_overviewmap.m
