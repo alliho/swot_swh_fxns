@@ -12,7 +12,7 @@ dr = 2; % grid spacing 2 km
 %% set default variables
 minflag = 1; mindepth = -1; ri = 3; Lavg = ri*dr;
 swhopt = 0; sshopt = 0; wspopt = 0; 
-modopt = 0; smoothopt = 0; rainopt = 1;
+modopt = 0; smoothopt = 0; rainopt = 0;
 patchopt = 0; corropt = 0; mskopt = 0; 
 dspkopt = 0;
 
@@ -61,12 +61,14 @@ dspkopt = p.Results.despike;
 
 if isa(mdl, 'NaN'); corropt = 0; end
 if patchopt==2; dspkopt=1; end
+if mskopt>0; rainopt=1; end
 
 if ~any(strcmp(varargin, 'Lavg')) & any(strcmp(varargin, 'ri'))
     Lavg = ri*dr;
 elseif any(strcmp(varargin, 'Lavg')) & ~any(strcmp(varargin, 'ri'))
     ri = Lavg./dr; ri = ceil(ri);
 end
+
 
 
 %% get swot label
