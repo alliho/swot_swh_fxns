@@ -3,6 +3,7 @@
 *.nc
 *.DS_Store
 *.mat
+*.asv
 /data/readme.md
 
 #fig_code/fig_formofthebias.m
