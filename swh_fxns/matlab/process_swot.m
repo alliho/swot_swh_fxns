@@ -10,9 +10,8 @@ function [var] = process_swot(swot, fldnm, varargin)
 dr = 2; % grid spacing 2 km  
 
 %% set default variables
-minflag = 1; mindepth = -1; ri = 3; Lavg = ri*dr;
-swhopt = 0; sshopt = 0; wspopt = 0; 
-modopt = 0; smoothopt = 0; rainopt = 0;
+mindepth = -1; ri = 3; Lavg = ri*dr;
+smoothopt = 0; rainopt = 0;
 patchopt = 0; corropt = 0; mskopt = 0; 
 dspkopt = 0;
 ptchsz = 3;
@@ -23,13 +22,8 @@ if contains(fldnm, 'wind_speed'); wspopt = 1; end
 
 %% parse variable inputs
 p = inputParser; p.KeepUnmatched = true;
-addParameter(p, 'swh', swhopt);
-addParameter(p, 'qcmodel', modopt);
 addParameter(p, 'model', NaN);
 addParameter(p, 'rain', rainopt);
-addParameter(p, 'wind_speed', wspopt);
-addParameter(p, 'ssha', sshopt);
-addParameter(p, 'ssh', sshopt);
 addParameter(p, 'smooth', smoothopt);
 addParameter(p, 'mindepth', mindepth);
 addParameter(p, 'ri', ri);
@@ -40,18 +34,11 @@ addParameter(p, 'mask', mskopt);
 addParameter(p, 'despike', dspkopt);
 addParameter(p, 'patchsize', ptchsz);
 addParameter(p, 'quality', 'good');
+addParameter(p, 'xtrck', [NaN NaN]);
 parse(p, varargin{:});
-if p.Results.ssha~=sshopt
-    sshopt = p.Results.ssha;
-elseif p.Results.ssh~=sshopt
-    sshopt = p.Results.ssh;
-end
-wspopt = p.Results.wind_speed;
 rainopt = p.Results.rain;
-swhopt = p.Results.swh;
 mdl = p.Results.model;
 patchopt = p.Results.patch;
-modopt = p.Results.qcmodel;
 corropt = p.Results.correct;
 mskopt = p.Results.mask;
 ri = p.Results.ri;
@@ -61,6 +48,7 @@ smoothopt = p.Results.smooth;
 dspkopt = p.Results.despike;
 ptchsz = p.Results.patchsize;
 qualflag = p.Results.quality;
+xtrck = p.Results.xtrck;
 
 if isa(mdl, 'NaN'); corropt = 0; end
 if patchopt==2; dspkopt=1; end
@@ -103,6 +91,9 @@ var = swot.(sfldnm);
 var(isinf(var)) = NaN;
 rawvar = var;
 
+if contains(sfldnm, 'ssha_karin') | contains(sfldnm, 'ssh_karin');
+    var = var + swot.height_cor_xover;
+end
 
 if mskopt
     msk = ones(size(var));
@@ -133,7 +124,10 @@ if mskopt
     
         if mskopt>=2
             msk(isin(log2(quvar), [11 11.2], 'inclusive')) = 1; % gets rid of the calibration patches
-            msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
+            if isfield(swot, [sfldnm '_uncert'])
+                msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
+            end
+            
             if contains(sfldnm, 'swh_karin') & mskopt>=3  
                 msk(isin(log2(quvar), [7 7.2], 'inclusive')) = 1;
                 msk(isin(log2(quvar), [5 7], 'inclusive')) = 1; % gets rid of the rain patches..?
@@ -242,14 +236,18 @@ if smoothopt
 
 
     %%% NEW WHILE PRESCRIBING FWHM BASED ON LAVG 2025/07/20
-    N = floor((Lavg/2 + 1)./2)*3; 
+    N = floor((Lavg/2 + 1)./2)*4; 
     N = floor(N/2)*2+1;
     FWHM = Lavg;
     sigma = FWHM / (2 * sqrt(2 * log(2)));
     ri = sigma/2; 
     H = fspecial('gaussian',N,ri);
-    var = filter2(H,var);
-    var = var.*msk;
+    % var = filter2(H,var);
+    var = nanfilter2(H,var); 
+    % using nanfilter now so want to mask out observations with more than 50% NaN in window
+    nmsk = filter2(ones(size(H)), double(isnan(var)))./(N*N);
+    nmsk(nmsk>0.5) = NaN; nmsk(~isnan(nmsk)) = 1;
+    var = var.*msk.*nmsk;
 
 
 end
@@ -259,9 +257,9 @@ if patchopt==1
     var = fillmissing2(var,"movmean", ri);
 end
 
-if smoothopt
+if smoothopt & ~sum(isnan(xtrck))
     % remove center that would have been filled in by smoothing and patch fill.
-    crosstracklims = [10 60] + [-1 1]*(ri*2000)/2;
+    crosstracklims = xtrck + ( [-1 1]*(ri*2000)/2)/1000;
     msk = NaN(size(var)); 
     msk(isin(abs(swot.cross_track_distance./1000), crosstracklims, 'inclusive') & swot.depth_or_elevation<mindepth) = 1; 
     var = var.*msk; 
@@ -291,7 +289,9 @@ if corropt & contains(fldnm, 'swh_karin') & ~contains(swot.processing, 'PIC2')
 
 end
 
-
+if contains(sfldnm, 'ssha_karin') | contains(sfldnm, 'ssh_karin');
+    var = var - swot.height_cor_xover;
+end
 
 end
 
