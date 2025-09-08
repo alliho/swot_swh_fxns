@@ -1,3 +1,4 @@
+[[frozen on date of publication]]
 
 Figure N
 filname
