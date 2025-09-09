@@ -7,7 +7,7 @@ Code accompanying analysis of SWOT KaRIn SWH product. This repository contains t
     -- **`correct_swotswh.m`**  
     -- **`process_swot.m`**  
     -- **`colocate_swot.m`**  
-![example_processing_20230419T045829](https://github.com/user-attachments/assets/abff04f8-c198-4445-ae9d-22cf9045a30d)
+![example_processing_20230419T045829](https://github.com/user-attachments/assets/fe0dbfc3-f614-4195-b71d-4a12e8e1a81c)
 
 - **`fig_code/`**  
   Code for generating the figures in publication.
