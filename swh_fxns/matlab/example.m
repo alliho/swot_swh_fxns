@@ -8,11 +8,12 @@ mdl = correct_swotswh();
 
 %% LOAD SWOT
 % SWOT Expert Data has been downloaded to local folder |swot_fpath| via earthdata.nasa.gov
-latlims = [31 38]; lonlims = [-129 -123]; daterange = [datenum(2023,4,18) datenum(2023,5,2)];
+latlims = [31 38]; lonlims = [-129 -123]; 
+daterange = [datenum(2023,4,18) datenum(2023,4,20)];
 SWOT = load_swot(swot_fpath,lonlims, latlims, daterange);
 
 %% PROCESS SWH DATA
-si = 1; 
+si = 3; 
 swot = SWOT(si); 
 
 % -------------------------------------------------------------------------
@@ -27,10 +28,10 @@ setaxes(ha, 'DataAspectRatio', [1 1 1]);
 setaxes(ha, 'XLim', lonlims + [-1 1].*(-0.1)); 
 setaxes(ha, 'YLim', latlims + [-1 1].*(-0.1)); 
 setaxes(ha, 'CLim', [1.6 4.4]); 
-setaxes(ha, 'CLim', [1.6 3.4]); 
-% setaxes(ha, 'CLim', [2 4.6]); 
+% setaxes(ha, 'CLim', [1.6 3.4]); 
+setaxes(ha, 'CLim', [2 4.6]); 
 % setaxes(ha, 'CLim', [1 2]); 
-% setaxes(ha, 'CLim', [2.5 4]); 
+setaxes(ha, 'CLim', [2.5 4]); 
 setaxes(ha, 'Colormap', nicejet); 
 linkaxes(ha)
 format_mapticks(ha, 'xy');
@@ -38,8 +39,8 @@ quietaxes(ha(2:end), 'y');
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 sgtitle({datestr(swot.t0), ''}, 'FontName','times', 'FontWeight', 'bold');
-fs = 11; pi =  5;
-quflag = 'good'; mskopt = 1;
+fs = 11; pi =  6;
+quflag = 'good'; mskopt = 2;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 X = swot.longitude - 360; Y = swot.latitude; fldnm = 'swh_karin';
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -62,7 +63,7 @@ optstr = [optstr, 'de-spiked'];
 text(lonlims(1)+0.2, latlims(2) - 0.2,optstr, 'FontName','courier', 'FontSize',fs, 'VerticalAlignment','top')
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 thisha = ha(4); axes(thisha); hold on; 
-Z = process_swot(swot, fldnm, 'mask',1, 'quality', quflag, 'despike', 1, 'patch',2, 'patchsize',pi);
+Z = process_swot(swot, fldnm, 'mask',mskopt, 'quality', quflag, 'despike', 1, 'patch',2, 'patchsize',pi);
 pcolor(X,Y,Z); shading flat;
 optstr = [optstr, 'patched'];
 text(lonlims(1)+0.2, latlims(2) - 0.2, optstr, 'FontName','courier', 'FontSize',fs, 'VerticalAlignment','top')
