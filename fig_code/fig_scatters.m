@@ -1,12 +1,5 @@
-base_path = '/Users/ajho/Documents/JPL/';
-local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
-addpath([local_path 'swh_fxns/matlab/'])
-addpath([local_path 'fig_code/addfxns/'])
-swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
-
-%%% ADD DATA
-load('/Users/ajho/Documents/myrepos/supportingdata/coastline_labeled.mat');
-load('/Users/ajho/Documents/myrepos/supportingdata/nicejet.mat');
+% when located in working directory (/swot_swh_fxns/fig_code/
+run set_env.m
 
 %%% OTHER DEPENDENCIES:
 % m_map
@@ -83,14 +76,16 @@ fldlbs = {'SWOT nadir','SWOT nadir', 'SWOT KaRIn', 'SWOT KaRIn'};
 
 qualflag = 1;
 uncflag = 1;
+fs = 15;
 % -------------------------------------------------------------------------
 figure(679174); clf; 
-setfigsize(gcf, [662   627])
+setfigsize(gcf, [946         898])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 % oldha = tight_subplot(2, 4, [0.025 0.05], [0.11 0.05], [0.05 0.05]);
 % [ha] = reorg_tightsubplot(oldha, {[1 2],[4 5]+1, [3 7], [4 8
 % ha = tight_subplot(3, 2, [0.025 0.05], [0.12 0.025], [0.033 0.033]);
 ha = tight_subplot(2, 2, [0.02 0.02], [0.08 0.015], [0.07 0.07]);
+% ha = tight_subplot(2, 2, [0.02 0.02], [0.08 0.015], [0.12 0.12]);
 % [ha] = reorg_tightsubplot(oldha, {[1 2],[4 5], [3 6]});
 
 % -------------------------------------------------------------------------
@@ -101,7 +96,7 @@ setaxes(ha(1:end),'XLim', [0 7.5]);
 setaxes(ha(1:end),'YLim', [0 7.5]);
 setaxes(ha(:),'CLim', [10 60]);
 setaxes(ha(:),'Colormap', subsetcmap(nicejet, 20));
-format_fig4print(ha)
+format_fig4print(ha, 'FontSize',fs)
 setaxes(ha(:),'DataAspectRatio', [1 1 1]);
 tx = [0:10];
 setaxes(ha, 'XTick', tx)
@@ -246,18 +241,21 @@ for hi=1:length(ha)
     dx = - 0.12; dy = 0.015;
     if ~procopt | ~contains(fldnm, 'karin')
         xdata = x; ydata = y; 
+        sts.n = nfxn(xdata,ydata);
         sts.cc = ccfxn(xdata,ydata);
         sts.rmse = rmsefxn(xdata,ydata);
         sts.crmse = crmsefxn(xdata,ydata);
         sts.bias = biasfxn(xdata,ydata);
         sts.SI = sifxn(xdata,ydata);
         x0 = sum(thisha.Position([1 3])) + dx; y0 = thisha.Position(2) + dy; 
+
+        
         textbypos(x0,y0,...
-            {   ['n$=$' num2str(sum(~isnan(xdata) & ~isnan(ydata)))], ...
+            {   ['n$=$' num2str(sts.n)], ...
                 ['bias$=$' num2str(round(nanmean([sts.bias]),2)) 'm'], ...
                 ['cRMSE$=$' num2str(round(nanmean([sts.crmse   ]),2)) 'm'],...
                 ['CC$=$' num2str(round(nanmean([sts.cc]),2))]}, ...
-            'interpreter', 'latex', 'VerticalAlignment','bottom');
+            'interpreter', 'latex', 'VerticalAlignment','bottom', 'FontSize',fs-3);
 
     elseif procopt & contains(fldnm, 'karin')
         if ~showprocopt & correctopt & includepic2
@@ -269,36 +267,39 @@ for hi=1:length(ha)
             nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
         end
         xdata = x(nn); ydata = y(nn);
-
+        sts.n = nfxn(xdata,ydata);
         sts.cc = ccfxn(xdata,ydata);
         sts.rmse = rmsefxn(xdata,ydata);
         sts.crmse = crmsefxn(xdata,ydata);
         sts.bias = biasfxn(xdata,ydata);
         sts.SI = sifxn(xdata,ydata);
         x0 = sum(thisha.Position([1 3])) + dx; y0 = thisha.Position(2) + dy; 
+
         textbypos(x0,y0,...
-            {   ['n$=$' num2str(sum(~isnan(xdata) & ~isnan(ydata)))], ...
+            {   ['n$=$' num2str(sts.n)], ...
                 ['bias$=$' num2str(round(nanmean([sts.bias]),2)) 'm'], ...
                 ['cRMSE$=$' num2str(round(nanmean([sts.crmse   ]),2)) 'm'],...
                 ['CC$=$' num2str(round(nanmean([sts.cc]),2))]}, ...
-            'interpreter', 'latex', 'VerticalAlignment','bottom');
+            'interpreter', 'latex', 'VerticalAlignment','bottom', 'FontSize',fs-3);
 
         nn = find(cellfun(@(x) strcmp(x, 'PIC2'), proc)); 
         if ~isempty(nn) & showprocopt & contains(fldnm, 'karin')
             xdata = x(nn); ydata = y(nn);
+            sts.n = nfxn(xdata, ydata);
             sts.cc = ccfxn(xdata,ydata);
             sts.rmse = rmsefxn(xdata,ydata);
             sts.crmse = crmsefxn(xdata,ydata);
             sts.bias = biasfxn(xdata,ydata);
             sts.SI = sifxn(xdata,ydata);
-            x0 = sum(thisha.Position([1 3])) + dx - 0.12; y0 = thisha.Position(2) + dy; 
+            x0 = sum(thisha.Position([1 3])) + dx - 0.1; y0 = thisha.Position(2) + dy; 
+
             if showprocopt & contains(fldnm, 'karin')
             textbypos(x0,y0,...
-                {   ['n$=$' num2str(sum(~isnan(xdata) & ~isnan(ydata)))], ...
+                {   ['n$=$' num2str(sts.n)], ...
                     ['bias$=$' num2str(round(nanmean([sts.bias]),2)) 'm'], ...
                     ['cRMSE$=$' num2str(round(nanmean([sts.crmse   ]),2)) 'm'],...
                     ['CC$=$' num2str(round(nanmean([sts.cc]),2))]}, ...
-                'interpreter', 'latex', 'VerticalAlignment','bottom', 'Color', [0.6 0 0]);
+                'interpreter', 'latex', 'VerticalAlignment','bottom', 'Color', [0.6 0 0], 'FontSize',fs-3);
             end
         end
 
@@ -312,25 +313,26 @@ for hi=1:length(ha)
         col = [0.11 0.28 0.8]+[0.3 0.3 0.2];
         scatter(x_nadir, y_nadir ,11, col,'filled', '^', 'DisplayName', '\Deltax < 2km')
         xdata = x_nadir; ydata = y_nadir;
+        sts.n = nfxn(xdata,ydata);
         sts.cc = ccfxn(xdata,ydata);
         sts.rmse = rmsefxn(xdata,ydata);
         sts.crmse = crmsefxn(xdata,ydata);
         sts.bias = biasfxn(xdata,ydata);
         sts.SI = sifxn(xdata,ydata);
-        x0 = sum(thisha.Position([1 3])) + dx - 0.12; y0 = thisha.Position(2) + dy; 
+        x0 = sum(thisha.Position([1 3])) + dx - 0.1; y0 = thisha.Position(2) + dy; 
         
         textbypos(x0,y0,...
-            {   ['n$=$' num2str(sum(~isnan(xdata) & ~isnan(ydata)))], ...
+            {   ['n$=$' num2str(sts.n)], ...
                 ['bias$=$' num2str(round(nanmean([sts.bias]),2)) 'm'], ...
                 ['cRMSE$=$' num2str(round(nanmean([sts.crmse   ]),2)) 'm'],...
                 ['CC$=$' num2str(round(nanmean([sts.cc]),2))]}, ...
-            'interpreter', 'latex', 'VerticalAlignment','bottom', 'Color', col);
+            'interpreter', 'latex', 'VerticalAlignment','bottom', 'Color', col, 'FontSize',fs-3);
 
 
     end
 
     if (showprocopt & contains(fldnm, 'karin')) | ~isnan(x_nadir)
-        cleanLegend(gca, 'northeast', 'FontSize',9, 'NumColumns',2)
+        cleanLegend(gca, 'northeast', 'FontSize',fs-3, 'NumColumns',2)
     end
     
 end
@@ -343,7 +345,7 @@ AddLetters2Plots({ ha(1) ha(2) ha(3) ha(4)},...
      {'(a)', '(b)', '(c)', '(d)', '(e)', '(f)', '(g)'},...
     'BackgroundColor', 'w', 'Margin', 1,...
     'HShift', 0.01, 'VShift', 0.015, ...
-    'FontName', 'Times', 'FontSize', 10, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top')
+    'FontName', 'Times', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', 'FontSize',fs)
 
 optstr = '';
 if scatopt; optstr = [optstr '_scatter']; end
@@ -352,3 +354,4 @@ if procopt; optstr = [optstr '_wproc']; end
 if addnadircenter; optstr = [optstr '_wcenternadir']; end
 
 
+% savejpg(gcf, ['fig_scatters'], [base_path(1:12) 'desktop/'], 'on')

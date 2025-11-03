@@ -8,6 +8,7 @@
 
 /fig_code/addfxns/smpl_syncs.txt
 
+
 #fig_code/fig_formofthebias.m
 #fig_code/fig_mooringobs_ex.m
 #fig_code/fig_overviewmap.m
@@ -15,5 +16,5 @@
 #fig_code/fig_scatters.m
 #fig_code/fig_structurefunction_hs.m
 fig_code/setup_data.m
-
+fig_code/set_env.m
 

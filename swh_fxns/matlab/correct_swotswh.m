@@ -11,13 +11,20 @@ datatype = p.Results.data;
 processingalgs = p.Results.processing;
 
 %% load data
-fpath = '/Users/ajho/Documents/JPL/data/processed/';
-% tmp = load([fpath 'buoys_SWOT.mat']); data(1) = tmp.data;
-% tmp = load([fpath 'MO_SWOT.mat']); data(2) = tmp.data;
 
-tmp = load([fpath 'buoys_SWOT_w-wind.mat']); data(1) = tmp.data;
-tmp = load([fpath 'MO_SWOT_w-wind.mat']); data(2) = tmp.data;
-% tmp = load([fpath 'buoys_SWOT_onedayrepeat_w-wind.mat']); data(3) = tmp.data;
+base_path = '/Users/ajho/Documents/JPL/';
+local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
+
+clear data
+fpath = [local_path '/data/'];
+tmp = load([fpath 'NDBC_x_SWOT_science.mat']); data(1) = tmp.data;
+tmp = load([fpath 'GNSS_x_SWOT_calval.mat']); data(2) = tmp.data;
+tmp = load([fpath 'NDBC_x_SWOT_calval.mat']); data(3) = tmp.data;
+data(1).obstype = 'buoys';
+data(2).obstype = 'moorings';
+data(3).obstype = 'buoys';
+
+
 
 
 

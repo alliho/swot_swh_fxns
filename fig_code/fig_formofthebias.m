@@ -1,12 +1,5 @@
-base_path = '/Users/ajho/Documents/JPL/';
-local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
-addpath([local_path 'swh_fxns/matlab/'])
-addpath([local_path 'fig_code/addfxns/'])
-swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
-
-%%% ADD DATA
-load('/Users/ajho/Documents/myrepos/supportingdata/coastline_labeled.mat');
-load('/Users/ajho/Documents/myrepos/supportingdata/nicejet.mat');
+% when located in working directory (/swot_swh_fxns/fig_code/
+run set_env.m
 
 %%% OTHER DEPENDENCIES:
 % m_map
@@ -42,6 +35,7 @@ mdl = correct_swotswh('data', 'buoys');
 mdl = correct_swotswh();
 
 %% [save] BIAS performance vs hs and cross track all moorings together | with histogram separaterd
+fs = 15;
 
 addmdl = 0;
 
@@ -111,10 +105,15 @@ cmap = [0.65 0.15 0.25; 0.3 0.3 0.3; 0.35 0.55 0.2]+0.1;
 size(cmap)
 % -------------------------------------------------------------------------
 
-figure(2016); clf; 
-setfigsize(gcf, [650         255])
+if strcmp(procname, 'PIC2')
+    figure(2017); clf; 
+else
+    figure(2016); clf; 
+end
+setfigsize(gcf, [906         327])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 ha = tight_subplot(2, 2, [0.0 0.023], [0.18 0.025], [0.089 0.025]);
+
 % setfigsize(gcf, [775         275])
 % % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 % ha = tight_subplot(1, 2, [0.015 0.023], [0.16 0.025], [0.08 0.025]);
@@ -127,16 +126,44 @@ end
 for hi=[3 4]
     ha(hi).Position(4) =  ha(hi).Position(4)/4; 
 end
+
+if strcmp(procname, 'PIC2')
+    dy = 0.16; 
+    for hi=1:2
+        ha(hi).Position(2) = ha(hi).Position(2) + dy; 
+        ha(hi).Position(4) = ha(hi).Position(4) - dy; 
+    end
+    for hi=3:4
+        ha(hi).Position(2) = ha(hi).Position(2) + dy; 
+        % ha(hi).Position(4) = ha(hi).Position(4) - dy; 
+    end
+end
+
 % -------------------------------------------------------------------------
 format_fig4print(ha)
-setaxes(ha, 'FontSize', 16)
+setaxes(ha, 'FontSize', fs)
 setaxes(ha(1:2), 'YLim', [-1 0.4])
-setaxes(ha(1:2), 'YLim', [-1 1].*1 - 0.2)
 setaxes(ha([1 3]), 'XLim', [0 6.35])
 setaxes(ha([1 3]), 'XLim', [0 5.35])
 setaxes(ha([1 3]), 'XLim', [-0.2 4.7])
 setaxes(ha([1 3]), 'XLabel', 'SWH [m]' )
-setaxes(ha(1:2), 'YLabel', '(KaRIn SWH - $H_s$) [m]' )
+
+
+if strcmp(procname, 'PIC2')
+    setaxes(ha(1:2), 'YLim', [-1 1].*0.8)
+    setaxes(ha(1:2), 'YLabel', {'SWH - $H_s$ [m]', '\textit{Version D}'} )
+else
+    setaxes(ha(1:2), 'YLim', [-1 1].*1 - 0.2)
+    setaxes(ha(1:2), 'YLabel', {'SWH - $H_s$ [m]', '\textit{Version C}'} )
+
+    % setaxes(ha(1:2), 'YLabel', 'SWH - $H_s$ [m]' )
+
+end
+
+
+
+
+% setaxes(ha(1:2), 'YLabel', '(KaRIn SWH - $H_s$) [m]' )
 setaxes(ha([2 4]), 'XLim', [3 68])
 setaxes(ha([2 4]), 'XLabel', 'x-track distance [km]')
 prcs = [10 90];
@@ -144,6 +171,7 @@ prcs = [1 99];
 facecol = [0.28 0.33 .5]+0.3
 linkaxes(ha(1:2), 'y')
 
+setaxes(ha, 'YTick', [-2:0.5:2])
 
 % -------------------------------------------------------------------------
 bins = [-1:0.5:7.5]; 
@@ -197,7 +225,7 @@ scatter(sts.x0(nn), sts.q2(nn), 40, 'k', 'filled', '>', 'MarkerFaceColor', col, 
 xticks([1:5])
 
 yline(0, 'k--')
-leg = cleanLegend(gca, 'northeast', 'Interpreter', 'latex', 'FontSize',10, 'NumColumns', 3);
+leg = cleanLegend(gca, 'northeast', 'Interpreter', 'latex', 'FontSize',fs-3, 'NumColumns', 3);
 leg.ItemTokenSize(1) = leg.ItemTokenSize(1)/2;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 thisha = ha(3); axes(thisha); hold on; 
@@ -205,7 +233,8 @@ histogram(xdata, bins, 'FaceColor', facecol*0.9, 'EdgeColor', 'none', 'Normaliza
 set(gca, 'Color', 'none', 'XColor', 'none', 'YColor', 'none', 'XTick', [], 'YTick', [], 'YLim', histlims)
 tx = histtx; 
 yline(tx, 'k:', 'Color', [facecol*0.7 0.3])
-text(ones(size(tx))*4.58, tx, num2str(tx'), 'HorizontalAlignment','right', 'VerticalAlignment','middle', 'FontName', 'Times', 'FontSize',8, 'Color', [facecol*0.8 0.3])
+text(ones(size(tx))*4.58, tx, num2str(tx'), 'HorizontalAlignment','right', 'VerticalAlignment','middle', 'FontName', 'Times', 'FontSize',fs-5, 'Color', [facecol*0.8 0.3])
+text(4.5, max(tx)*1.25, 'n', 'HorizontalAlignment','center', 'VerticalAlignment','bottom', 'FontName', 'Times', 'FontSize',fs-5, 'Color', [facecol*0.8 0.3])
 
 % -------------------------------------------------------------------------
 bins = [0:5:70]; 
@@ -240,7 +269,7 @@ scatter(sts.x0(nn), sts.q2(nn), 40, 'k', 'filled', 'v', 'MarkerFaceColor', col, 
 yline(0, 'k--')
 
 
-leg = cleanLegend(gca, 'northeast', 'Interpreter', 'latex', 'FontSize',10, 'NumColumns', 3);
+leg = cleanLegend(gca, 'northeast', 'Interpreter', 'latex', 'FontSize',fs-3, 'NumColumns', 3);
 leg.ItemTokenSize(1) = leg.ItemTokenSize(1)/2;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 thisha = ha(4); axes(thisha); hold on; 
@@ -248,7 +277,8 @@ histogram(ydata, bins, 'FaceColor', facecol*0.9, 'EdgeColor', 'none', 'Normaliza
 set(gca, 'Color', 'none', 'XColor', 'none', 'YColor', 'none', 'XTick', [], 'YTick', [], 'YLim', histlims)
 tx = histtx; 
 yline(tx, 'k:', 'Color', [facecol*0.7 0.3])
-text(ones(size(tx))*66, tx, num2str(tx'), 'HorizontalAlignment','right', 'VerticalAlignment','middle', 'FontName', 'Times', 'FontSize',8, 'Color', [facecol*0.8 0.3])
+text(ones(size(tx))*66, tx, num2str(tx'), 'HorizontalAlignment','right', 'VerticalAlignment','middle', 'FontName', 'Times', 'FontSize',fs-5, 'Color', [facecol*0.8 0.3])
+text(64.8, max(tx)*1.25, 'n', 'HorizontalAlignment','center', 'VerticalAlignment','bottom', 'FontName', 'Times', 'FontSize',fs-5, 'Color', [facecol*0.8 0.3])
 
 if addmdl
     axes(ha(1));
@@ -285,9 +315,11 @@ end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 quietaxes(ha(2), 'y')
 
+if strcmp(procname, 'PIC2'); labs = {'(c)','(d)'}; else; labs = {'(a)', '(b)'}; end
 AddLetters2Plots({ ha(1) ha(2)},...
-     {'(a)', '(b)', '(c)'},...
+     labs,...
     'BackgroundColor', 'w', 'Margin', 1,...
     'HShift', 0.01, 'VShift', 0.03, ...
-    'FontName', 'Times', 'FontSize', 10, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top')
+    'FontName', 'Times', 'FontSize', fs, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top')
 
+% savejpg(gcf, ['fig_formofthebias_' procname], [base_path(1:12) 'desktop/'], 'on')

@@ -1,11 +1,5 @@
-base_path = '/Users/ajho/Documents/JPL/';
-local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
-addpath([local_path 'swh_fxns/matlab/'])
-addpath([local_path 'fig_code/addfxns/'])
-swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
-
-%%% ADD DATA
-load('/Users/ajho/Documents/myrepos/supportingdata/coastline_labeled.mat');
+% when located in working directory (/swot_swh_fxns/fig_code/
+run set_env.m
 
 %%% OTHER DEPENDENCIES:
 % m_map
@@ -30,7 +24,7 @@ SWOT = [SWOT SWOT_back];
 
 %% load NDBC buoys
 fpath = [local_path 'data/'];
-load([fpath 'buoys_SWOT.mat']); 
+load([fpath 'NDBC_x_SWOT_science.mat']); 
 buoys = data; 
 
 %% load GNSS Cal/Val buoys
@@ -55,7 +49,7 @@ swot = SWOT(si);
 % -------------------------------------------------------------------------
 
 figure(1058); clf;  
-setfigsize(gcf, [1168         312])
+setfigsize(gcf, [1231         321])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 ha = tight_subplot(1, 4, [0.015 0.04], [0.12 0.023], [0.07 0.03]);
 % [ha] = reorg_tightsubplot(oldha, {[1 5], [2 6], [3:4], [7:8]});
@@ -64,7 +58,7 @@ ha(1).Position(1) = ha(1).Position(1) - 0.035;
 ha(1).Position(3) = ha(1).Position(3) + 0.025;
 dx = 0.025;
 % -------------------------------------------------------------------------
-format_fig4print(ha)
+format_fig4print(ha, 'FontSize',13)
 setaxes(ha(2:4), 'DataAspectRatio', [1 1 1])
 setaxes(ha(3), 'XLim', lonlims)
 setaxes(ha(3), 'YLim', latlims)
@@ -157,3 +151,4 @@ AddLetters2Plots({ ha(1) ha(2) ha(3) ha(4)},...
     'HShift', -0.01, 'VShift', -0.035, ...
     'FontName', 'Times', 'FontSize', 10, 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom', 'Location', 'SouthEast')
 
+% savejpg(gcf, 'fig_overviewmap', [base_path(1:12) 'desktop/'], 'on')

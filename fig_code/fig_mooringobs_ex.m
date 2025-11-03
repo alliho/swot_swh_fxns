@@ -1,12 +1,5 @@
-base_path = '/Users/ajho/Documents/JPL/';
-local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
-addpath([local_path 'swh_fxns/matlab/'])
-addpath([local_path 'fig_code/addfxns/'])
-swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
-
-%%% ADD DATA
-load('/Users/ajho/Documents/myrepos/supportingdata/coastline_labeled.mat');
-load('/Users/ajho/Documents/myrepos/supportingdata/nicejet.mat');
+% when located in working directory (/swot_swh_fxns/fig_code/
+run set_env.m
 
 %%% OTHER DEPENDENCIES:
 % m_map
@@ -80,27 +73,29 @@ for mi=1:length(MO)
 end
 
 %% [save] plot
+fs = 15;
 mi = 3; 
 swotopt = 1; nadiropt = 0;
 fldnm = 'swh_karin_uncorr_patch';
 
 mo = MO(mi);
 figure(306); clf;
-setfigsize(gcf, [1243         304])
+setfigsize(gcf, [1293         304])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 ha = tight_subplot(2, 1, [0.025 0.05], [0.09 0.05], [0.06 0.07]);
 % [ha] = reorg_tightsubplot(oldha, {[1],[2:3]});
 % -------------------------------------------------------------------------
-dy = 0.06;
+dy = 0.08;
 ha(1).Position(2) = ha(1).Position(2) + dy; 
 ha(1).Position(4) = ha(1).Position(4) - dy; 
 ha(2).Position(4) = ha(2).Position(4) + dy; 
 
 % -------------------------------------------------------------------------
-format_fig4print(ha);
+format_fig4print(ha, 'FontSize',fs);
 setaxes(ha, 'XLim', minmax(mo.t));
 setaxes(ha, 'XLim', minmax(mo.swot.time) + [-1 1].*15);
-setaxes(ha, 'XLim', minmax(mo.swot.time) + [-1 1].*2);
+% setaxes(ha, 'XLim', minmax(mo.swot.time) + [-1 1].*2);
+setaxes(ha, 'XLim', minmax(mo.swot.time) + [-1 0].*2);
 
 cmap = [ buildcmap([ nicejet(1,:).*0.7;nicejet(1,:)],15); nicejet; buildcmap([nicejet(end,:); nicejet(end,:).*0.7],23) ];
 setaxes(ha, 'Colormap', cmap);
@@ -131,13 +126,18 @@ if swotopt;
     nn = find(~isnan(mo.swot.(fldnm))); 
     plot(mo.swot.time(nn), mo.swot.(fldnm)(nn), 'r.', 'MarkerSize',10, 'DisplayName' ,'SWOT KaRIn SWH')
 end
-cleanLegend(gca, 'northeast', 'NumColumns', 3, 'interpreter', 'latex', 'Box', 'off')
+cleanLegend(gca, 'northeast', 'NumColumns', 3, 'interpreter', 'latex', 'Box', 'off', 'FontSize', fs-3)
+% -------------------------------------------------------------------------
 
 % -------------------------------------------------------------------------
+xlims = get(gca, 'XLim'); 
+alignyaxes(ha, xlims(1)-4.5)
 AddLetters2Plots({ ha(1) ha(2)},...
    {'(a)', '(b)', '(c)', '(d)', '(e)', '(f)', '(g)'},...
   'BackgroundColor', 'none', 'Margin', 1,...
   'HShift', 0.005, 'VShift', 0.015, ...
-  'FontName', 'Times', 'FontSize', 10, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top')
+  'FontName', 'Times', 'FontSize', fs, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top')
 
 quietaxes(ha(1), 'x')
+
+% savejpg(gcf, 'fig_mooringobs_ex', [base_path(1:12) 'desktop/'], 'on')

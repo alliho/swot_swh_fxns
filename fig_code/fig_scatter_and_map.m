@@ -1,12 +1,5 @@
-base_path = '/Users/ajho/Documents/JPL/';
-local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
-addpath([local_path 'swh_fxns/matlab/'])
-addpath([local_path 'fig_code/addfxns/'])
-swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
-
-%%% ADD DATA
-load('/Users/ajho/Documents/myrepos/supportingdata/coastline_labeled.mat');
-load('/Users/ajho/Documents/myrepos/supportingdata/nicejet.mat');
+% when located in working directory (/swot_swh_fxns/fig_code/
+run set_env.m
 
 %%% OTHER DEPENDENCIES:
 % m_map
@@ -56,6 +49,8 @@ slpfxn = @(x,y) getind(linfxn(x,y),1);
 slp0fxn = @(x,y) y(getnn(x,y))/x(getnn(x,y));
 
 %% [save for paper] JUST SCATTER | buoys and moorings | with nadir? no model 
+fs = 15;
+
 mdl = correct_swotswh('data', 'buoys');
 
 dd = 1; thl = datenum('20240521T150311', 'yyyymmddTHHMMSS'); thl_lims = thl + [-1 1].*24/24; clims = [1.6 4.6];
@@ -91,7 +86,8 @@ fldlbs = {'SWOT KaRIn', 'model'};
 
 % -------------------------------------------------------------------------
 figure(404); clf; 
-setfigsize(gcf, [330   627])
+setfigsize(gcf, [433         832])
+
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 ha = tight_subplot(2, 1, [0.02 0.02], [0.08 0.015], [0.13 0.01]);
 
@@ -102,7 +98,7 @@ setaxes(ha(1:end),'YLim', [0 7.5]);
 % setaxes(ha(1:end),'YLim', [0 7.5]);
 setaxes(ha(:),'CLim', clims);
 setaxes(ha(:),'Colormap', subsetcmap(nicejet, 20));
-format_fig4print(ha)
+format_fig4print(ha, 'FontSize', fs)
 setaxes(ha(:),'DataAspectRatio', [1 1 1]);
 tx = [0:10];
 setaxes(ha, 'XTick', tx)
@@ -212,12 +208,13 @@ for hi=1:length(ha)
     sts.crmse = crmsefxn(xdata,ydata);
     sts.bias = biasfxn(xdata,ydata);
     x0 = sum(thisha.Position([1 3])) + dx; y0 = thisha.Position(2) + dy; 
+    
     textbypos(x0,y0,...
         {   ['n$=$' num2str(sum(~isnan(xdata) & ~isnan(ydata)))], ...
             ['bias$=$' num2str(round(nanmean([sts.bias]),2)) 'm'], ...
             ['cRMSE$=$' num2str(round(nanmean([sts.crmse   ]),2)) 'm'],...
             ['CC$=$' num2str(round(nanmean([sts.cc]),2))]}, ...
-        'interpreter', 'latex', 'VerticalAlignment','bottom');
+        'interpreter', 'latex', 'VerticalAlignment','bottom', 'FontSize',fs-3);
 
 
     %%% PULL OUT HIGHLIGHT
@@ -229,7 +226,7 @@ for hi=1:length(ha)
         end
 
         % scatter(xdata(tt), ydata(tt),12, 'r', 'filled') 
-        scatter(x(tt), y(tt),51, x(tt)', 'filled', 'MarkerEdgeColor', 'k', 'LineWidth',1, 'MarkerEdgeAlpha',0.5); 
+        scatter(x(tt), y(tt),70, x(tt)', 'filled', 'MarkerEdgeColor', 'k', 'LineWidth',1, 'MarkerEdgeAlpha',0.5); 
         disp([xlb ' Hs range: ' num2str(range(x(tt)))])
         disp([ylb ' SWH range: ' num2str(range(y(tt)))]);
         
@@ -251,9 +248,13 @@ quietaxes(ha(1),'x')
 
 
 
+% savejpg(gcf, ['fig_scatters_and_map_scatter'], [base_path(1:12) 'desktop/'], 'on')
 
 
 %% [save] do snapshot
+fs = 15; 
+
+
 dscl = 1.8;
 dlat = 1.3; dlon = 1.26;
 dlat = dlat*dscl; dlon = dlon*dscl;
@@ -301,10 +302,10 @@ for ei = 1:length(sfldnms)
         swot.(fldnm) = tmp(:,yy); 
     end
 end
-swot.fname = fnames(fi).name; 
+swot.fname = fnames(fi).name; swot.fpath = fpath;
 [swot.t0, swot.cycle, swot.pass, swot.processing, swot.orientation, swot.angle] = get_swot_info(swot, swot.fname);
 modopt = 0; smoothopt = 1; interpopt = 1; patchopt = 0; Lavg = 5;  % anomaly patching on SWH
-varargin = {'patch', patchopt, 'qcmodel', modopt, 'model', mdl, 'smooth', smoothopt, 'Lavg', Lavg, 'correct', 1, 'mask', 1, 'mindepth', -1, 'interp', interpopt};
+varargin = {'patch', patchopt, 'qcmodel', modopt, 'model', mdl, 'smooth', smoothopt, 'Lavg', Lavg, 'correct', 1, 'mask', 3, 'mindepth', -1, 'interp', interpopt};
 
         fldnm = 'swh_karin';
         Z = process_swot(swot, fldnm, varargin{:});
@@ -332,7 +333,7 @@ varargin = {'patch', patchopt, 'qcmodel', modopt, 'model', mdl, 'smooth', smooth
 
 % -------------------------------------------------------------------------
 figure(405); clf; 
-setfigsize(gcf, [352   627])
+setfigsize(gcf, [433         832])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 ha = tight_subplot(2, 1, [0.02 0.02], [0.08 0.015], [0.13 0.03]);
 
@@ -341,7 +342,7 @@ setaxes(ha(1:end),'XLim', lonlims);
 setaxes(ha(1:end),'YLim', latlims);
 setaxes(ha(:),'CLim', clims);
 setaxes(ha(:),'Colormap', subsetcmap(nicejet, 100));
-format_fig4print(ha)
+format_fig4print(ha, 'FontSize', fs)
 setaxes(ha(:),'DataAspectRatio', [1 1 1]);
 format_mapticks(ha, 'xy')
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -426,7 +427,7 @@ for hi=1:length(ha)
             disp(['MEAN WAVE DIRECTION FROM BUOYS'])
             disp(num2str(dirnanmean(dp(tt))))
         end
-        scatter(lon(tt), lat(tt),80, hs(tt)', 'filled', 'MarkerEdgeColor', 'k', 'LineWidth',1, 'MarkerEdgeAlpha',0.5); 
+        scatter(lon(tt), lat(tt),80+10, hs(tt)', 'filled', 'MarkerEdgeColor', 'k', 'LineWidth',1, 'MarkerEdgeAlpha',0.5); 
 
 
 
@@ -436,18 +437,19 @@ for hi=1:length(ha)
     end
 
 
-    c = fixedcolorbar(gca, 'Location','southoutside', 'FontSize',9, 'AxisLocationMode', 'manual', 'YAxisLocation', 'top'); 
+    c = fixedcolorbar(gca, 'Location','southoutside', 'FontSize',fs-4, 'AxisLocationMode', 'manual', 'YAxisLocation', 'top'); 
     if dd==2; c.Ticks = [2:0.5:4]; end
-    c.Position(3) = c.Position(3)/4;
-    c.Position(4) = c.Position(4)*0.5;
-    c.Position(1) = sum(thisha.Position([1 3])) - c.Position(3) - 0.075; 
+    c.Position(3) = c.Position(3)/4.5;
+    c.Position(4) = c.Position(4)*0.75;
+    c.Position(1) = sum(thisha.Position([1 3])) - c.Position(3) - 0.045; 
     c.Position(2) = sum(thisha.Position([2])) + 0.015; 
-    ylabel(c, [ylb ' SWH [m]'], 'Interpreter', 'latex', 'FontSize',8);
+    ylabel(c, [ylb ' SWH [m]'], 'Interpreter', 'latex', 'FontSize',fs-5);
     % ylabel(c, ['SWH [m]'], 'Interpreter', 'latex', 'FontSize',8);
 end
-
 
 
 quietaxes(ha(1),'x')
 
 
+
+% savejpg(gcf, ['fig_scatters_and_map_map'], [base_path(1:12) 'desktop/'], 'on')

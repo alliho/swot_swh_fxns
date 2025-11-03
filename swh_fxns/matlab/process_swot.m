@@ -20,6 +20,11 @@ if contains(fldnm, 'ssh'); sshopt = 1; end
 if contains(fldnm, 'swh'); swhopt = 1; end
 if contains(fldnm, 'wind_speed'); wspopt = 1; end
 
+swottype = 'Expert'; dr = 2000;
+if (sum(contains(fieldnames(swot), 'left_') | contains(fieldnames(swot), 'right_')) > 2) | contains(swot.fname, 'Unsmoothed')
+    swottype = 'Unsmoothed'; dr = 250;
+end
+
 %% parse variable inputs
 p = inputParser; p.KeepUnmatched = true;
 addParameter(p, 'model', NaN);
@@ -53,11 +58,14 @@ xtrck = p.Results.xtrck;
 if isa(mdl, 'NaN'); corropt = 0; end
 if patchopt==2; dspkopt=1; end
 if mskopt>0; rainopt=1; end
+if any(strcmp(varargin, 'Lavg')) & Lavg > 0 & ~any(strcmp(varargin, 'smooth'))
+    smoothopt = 1; 
+end
 
 if ~any(strcmp(varargin, 'Lavg')) & any(strcmp(varargin, 'ri'))
-    Lavg = ri*dr;
+    Lavg = ri*(dr./1000);
 elseif any(strcmp(varargin, 'Lavg')) & ~any(strcmp(varargin, 'ri'))
-    ri = Lavg./dr; ri = ceil(ri);
+    ri = Lavg./(dr./1000); ri = ceil(ri);
 end
 
 
@@ -68,47 +76,68 @@ sfldnm = strrep(sfldnm, '_qc', '');
 sfldnm = strrep(sfldnm, '_cor', '');
 sfldnm = strrep(sfldnm, '_avg', '');
 sfldnm = strrep(sfldnm, '_proc', '');
+sfldnm = strrep(sfldnm, 'right_', '');
+sfldnm = strrep(sfldnm, 'left_', '');
 
 if contains(fldnm, 'height_cor_xover'); sfldnm = fldnm; end
-
+fldhdr = '';
+if strcmp(swottype, 'Unsmoothed')
+    tmp = fieldnames(swot);
+    ff = find(contains(tmp, fldnm));
+    if sum(contains(tmp(ff), 'right') | contains(tmp(ff), 'left'))
+        fldhdr = strsplit(fldnm, '_'); fldhdr = [fldhdr{1} '_'];
+    end
+end
 %% determine field and correct accordingly
 
-
+X = swot.([fldhdr 'longitude'])-360;
+Y = swot.([fldhdr 'latitude']); 
+g = 9.81; 
 
 if strcmp(sfldnm, 'time')
-    var = swot.(sfldnm); % ASSIGN
+    var = swot.([fldhdr sfldnm]); % ASSIGN
     return
 end
 
 
-% if contains(fldnm, 'ssha') | contains(fldnm, 'ssh')
-%     var = swot.(sfldnm) + swot.height_cor_xover; 
-% else
-%     var = swot.(sfldnm);
-% end
-
-var = swot.(sfldnm); 
+var = swot.([fldhdr sfldnm]); 
 var(isinf(var)) = NaN;
 rawvar = var;
 
 if contains(sfldnm, 'ssha_karin') | contains(sfldnm, 'ssh_karin');
-    var = var + swot.height_cor_xover;
+    var = var + swot.([fldhdr 'height_cor_xover']);
+end
+if strcmp(swottype, 'Unsmoothed')
+    corr_fldnms = {'mean_sea_surface_cnescls', 'solid_earth_tide', 'ocean_tide_fes', 'internal_tide_hret', 'pole_tide', 'dac'};
+    for fi=1:length(corr_fldnms); 
+        cfldnm = corr_fldnms{fi};
+        var = var - swot.([fldhdr cfldnm]);
+    end
 end
 
+
+%% 
 if mskopt
     msk = ones(size(var));
     msk(isnan(var)) = NaN; 
     
-    if isfield(swot, [sfldnm '_qual'])
-        quvar = swot.([sfldnm '_qual']);
-        quinfo = ncinfo([swot.fpath swot.fname], [sfldnm '_qual']);
-        flag_meanings = quinfo.Attributes(4).Value; flag_meanings = strsplit(flag_meanings);
-        flag_masks = quinfo.Attributes(5).Value;
+    if isfield(swot, [fldhdr sfldnm '_qual'])
+        quvar = swot.([fldhdr sfldnm '_qual']);
+        
         
         if strcmp(qualflag, 'good')
             msk(quvar > 0) = NaN;
         else
             % flag_heirarchy = {'suspect', 'degraded', 'bad'};
+
+            if strcmp(swottype, 'Unsmoothed')
+                quinfo = ncinfo([swot.fpath swot.fname], [fldhdr(1:end-1) '/' sfldnm '_qual']);
+            else
+                quinfo = ncinfo([swot.fpath swot.fname], [sfldnm '_qual']);
+            end
+            flag_meanings = quinfo.Attributes(4).Value; flag_meanings = strsplit(flag_meanings);
+            flag_masks = quinfo.Attributes(5).Value;
+
             qq = find(contains(flag_meanings, qualflag));
             maxflag = max(flag_masks(qq));
             msk(quvar > maxflag) = NaN;
@@ -124,9 +153,16 @@ if mskopt
     
         if mskopt>=2
             msk(isin(log2(quvar), [11 11.2], 'inclusive')) = 1; % gets rid of the calibration patches
-            if isfield(swot, [sfldnm '_uncert'])
-                msk(isnan(swot.([sfldnm '_uncert']))) = NaN;
+            if isfield(swot, [fldhdr sfldnm '_uncert'])
+                msk(isnan(swot.([fldhdr sfldnm '_uncert']))) = NaN;
             end
+            
+            if strcmp(swottype, 'Unsmoothed')
+                if isfield(swot, [fldhdr strrep(sfldnm, '_2', '') '_uncert'])
+                    msk(isnan(swot.([fldhdr strrep(sfldnm, '_2', '') '_uncert']))) = NaN;
+                end
+            end
+
             
             if contains(sfldnm, 'swh_karin') & mskopt>=3  
                 msk(isin(log2(quvar), [7 7.2], 'inclusive')) = 1;
@@ -158,53 +194,78 @@ if mskopt
 %     end
 
 
-    
-    msk(swot.depth_or_elevation > mindepth) = NaN;
-    if rainopt
-        rainmsk = ones(size(var));
-        % rainmsk(swot.rain_rate > 1) = 0;
-        rainmsk(swot.rain_rate > 0) = 0;
-        rainmsk(swot.rain_flag > 0) = 0;
-        % rainmsk = filter2(ones(3)./9, rainmsk); rainmsk(rainmsk~=1) = NaN;
-        % % rainmsk = filter2(ones(2)./4, rainmsk); 
-        % rainmsk = round(rainmsk, 1); rainmsk(rainmsk<0.33) = NaN; rainmsk(~isnan(rainmsk)) = 1;
-        rainmsk(rainmsk==0) = NaN;
-        msk = msk.*rainmsk;
+    if strcmp(swottype, 'Expert')
+        msk(swot.([fldhdr 'depth_or_elevation']) > mindepth) = NaN;
+        if rainopt
+            rainmsk = ones(size(var));
+            % rainmsk(swot.rain_rate > 1) = 0;
+            rainmsk(swot.([fldhdr 'rain_rate']) > 0) = 0;
+            rainmsk(swot.([fldhdr 'rain_flag']) > 0) = 0;
+            % rainmsk = filter2(ones(3)./9, rainmsk); rainmsk(rainmsk~=1) = NaN;
+            % % rainmsk = filter2(ones(2)./4, rainmsk); 
+            % rainmsk = round(rainmsk, 1); rainmsk(rainmsk<0.33) = NaN; rainmsk(~isnan(rainmsk)) = 1;
+            rainmsk(rainmsk==0) = NaN;
+            msk = msk.*rainmsk;
+        end
     end
 
     if contains(fldnm, 'swh_karin'); 
         msk(var<=0) = NaN;
     end
+
+    if strcmp(swottype, 'Unsmoothed')
+
+        msk(deg2km(swot.([fldhdr  'latitude_uncert'])).*1000 > 2) = NaN;
+        msk(deg2km(swot.([fldhdr 'longitude_uncert'])).*1000 > 2) = NaN;
+
+
+        N = round(2000./dr);
+        nmsk = filter2(ones(N), double(isnan(var) | isnan(msk)))./(N*N);
+        nmsk(nmsk>(N*0.5)./(N^2)) = NaN; nmsk(~isnan(nmsk)) = 1;
+        msk(isnan(nmsk)) = NaN;
+
+       
+
+
+    end
+
     var = var.*msk;
 end
+
+%%
 
 if dspkopt
     pi = 2; conn = 4; 
     msk = ones(size(var));
     msk(isnan(var)) = NaN; 
-    msk_anomalies = makeanomalymask(var, pi, conn);
+    msk_anomalies = makeanomalymask(var, pi, conn,dr);
     var = var.*msk_anomalies;
     var = fillmissing2(var, 'linear');
     var = var.*msk;
     % if contains(fldnm, 'swh_karin'); var(var<0) = NaN; end
 end
 
+%%
 
-if patchopt==1
+
+if patchopt==1 %& strcmp(swottype, 'Expert')
     var = fillmissing2(var,"movmedian", ri);
-elseif patchopt==2
+elseif patchopt==2 %& strcmp(swottype, 'Expert')
     % anomaly patching!!!
     pi = ptchsz; conn = 4; 
     if contains(fldnm, 'swh'); 
-        msk_anomalies = makeanomalymask(var, pi, conn);
+        msk_anomalies = makeanomalymask(var, pi, conn,dr);
         var = var.*msk_anomalies;
     end
     var = patchswot(var, pi-1, conn);
     var = patchswot(var, pi+1, conn);
+
 end
 
 
 
+
+%%
 if smoothopt    
     msk = ones(size(var)); msk(isnan(var)) = NaN;
 
@@ -236,11 +297,13 @@ if smoothopt
 
 
     %%% NEW WHILE PRESCRIBING FWHM BASED ON LAVG 2025/07/20
-    N = floor((Lavg/2 + 1)./2)*4; 
+    % N = floor((Lavg/(dr./2000) + 1)./2)*4; 
+    N = floor((Lavg/(dr./1000) + 1)./2)*5; 
+    % N = N*2;
     N = floor(N/2)*2+1;
     FWHM = Lavg;
     sigma = FWHM / (2 * sqrt(2 * log(2)));
-    ri = sigma/2; 
+    ri = sigma/(dr./1000); 
     H = fspecial('gaussian',N,ri);
     % var = filter2(H,var);
     var = nanfilter2(H,var); 
@@ -251,26 +314,31 @@ if smoothopt
 
 
 end
+%%
 
-if patchopt==1
-    % var = fillmissing2(var,"movmedian", ri);
-    var = fillmissing2(var,"movmean", ri);
-end
+% 
+% if patchopt==1
+%     % var = fillmissing2(var,"movmedian", ri);
+%     var = fillmissing2(var,"movmean", ri);
+% end
+% 
 
+
+%%
 if smoothopt & ~sum(isnan(xtrck))
     % remove center that would have been filled in by smoothing and patch fill.
     crosstracklims = xtrck + ( [-1 1]*(ri*2000)/2)/1000;
     msk = NaN(size(var)); 
-    msk(isin(abs(swot.cross_track_distance./1000), crosstracklims, 'inclusive') & swot.depth_or_elevation<mindepth) = 1; 
+    msk(isin(abs(swot.([fldhdr 'cross_track_distance'])./1000), crosstracklims, 'inclusive') & swot.depth_or_elevation<mindepth) = 1; 
     var = var.*msk; 
 end
 
-
+%%
 if corropt & contains(fldnm, 'swh_karin') & ~contains(swot.processing, 'PIC2')
     % mdl = correct_swotswh();
     msk = ones(size(var)); 
     msk(isnan(var) | var < 0.05) = NaN;
-    corr = mdl(var, abs(swot.cross_track_distance./1000)); corr(isinf(corr)) = 0; 
+    corr = mdl(var, abs(swot.([fldhdr 'cross_track_distance'])./1000)); corr(isinf(corr)) = 0; 
     var = var - corr; 
     var = var.*msk;
     var(var<0) = NaN;
@@ -279,7 +347,7 @@ if corropt & contains(fldnm, 'swh_karin') & ~contains(swot.processing, 'PIC2')
         % anomaly patching!!!
         pi = 3; conn = 4; 
         if contains(fldnm, 'swh'); 
-            msk_anomalies = makeanomalymask(var, pi, conn);
+            msk_anomalies = makeanomalymask(var, pi, conn, dr);
             var = var.*msk_anomalies;
         end
         var = patchswot(var, pi, conn);
@@ -288,10 +356,19 @@ if corropt & contains(fldnm, 'swh_karin') & ~contains(swot.processing, 'PIC2')
 
 
 end
-
-if contains(sfldnm, 'ssha_karin') | contains(sfldnm, 'ssh_karin');
-    var = var - swot.height_cor_xover;
+%%
+if contains(sfldnm, 'ssha_karin') | contains(sfldnm, 'ssh_karin')
+    var = var - swot.([fldhdr 'height_cor_xover']);
 end
+if strcmp(swottype, 'Unsmoothed')
+    corr_fldnms = {'mean_sea_surface_cnescls', 'solid_earth_tide', 'ocean_tide_fes', 'internal_tide_hret', 'pole_tide', 'dac'};
+    for fi=1:length(corr_fldnms); 
+        cfldnm = corr_fldnms{fi};
+        var = var + swot.([fldhdr cfldnm]);
+    end
+end
+
+
 
 end
 
@@ -309,10 +386,10 @@ function var = patchswot(var, pi, conn)
 
 end
 
-function msk_anomalies = makeanomalymask(var, pi, conn)
+function msk_anomalies = makeanomalymask(var,pi, conn, dr)
     msk_anomalies = ones(size(var));
-    var_large = filt2(var,2000,15*1000, 'lp');
-    var_small = filt2(var,2000,15*1000, 'hp');
+    var_large = filt2(var,dr,15*1000, 'lp');
+    var_small = filt2(var,dr,15*1000, 'hp');
     msk_anomalies = double(msk_anomalies); 
     msk_anomalies((var_small./var_large) > 0.2) = NaN;
 

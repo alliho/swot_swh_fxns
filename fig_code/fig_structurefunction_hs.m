@@ -1,12 +1,5 @@
-base_path = '/Users/ajho/Documents/JPL/';
-local_path = [base_path 'papers/swot_swh_calval/swot_swh_fxns/'];
-addpath([local_path 'swh_fxns/matlab/'])
-addpath([local_path 'fig_code/addfxns/'])
-swot_fpath = [base_path '/data/SWOT/onedayrepeat/'];
-
-%%% ADD DATA
-load('/Users/ajho/Documents/myrepos/supportingdata/coastline_labeled.mat');
-load('/Users/ajho/Documents/myrepos/supportingdata/nicejet.mat');
+% when located in working directory (/swot_swh_fxns/fig_code/
+run set_env.m
 
 %%% OTHER DEPENDENCIES:
 % m_map
@@ -40,6 +33,8 @@ data(3).obstype = 'buoys';
 
 
 %% [save] one plot for moorings, structure function in units meters
+fs = 15;
+
 dd = 2;
 bins = [1 5:10:100 125:25:200 300:100:1000]; 
 nmin = 2;
@@ -63,7 +58,7 @@ corropt = 1;
 
 % -------------------------------------------------------------------------
 figure(69954); clf; 
-setfigsize(gcf, [483   375])
+setfigsize(gcf, [537         407])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 % oldha = tight_subplot(2, 4, [0.025 0.05], [0.11 0.05], [0.05 0.05]);
 % [ha] = reorg_tightsubplot(oldha, {[1 2],[4 5]+1, [3 7], [4 8
@@ -76,7 +71,7 @@ setaxes(ha(:),'CLim', [0 70]);
 % setaxes(ha(:),'Colormap', subsetcmap(nicejet, 20));
 linkaxes(ha(:))
 
-format_fig4print(ha)
+format_fig4print(ha, 'FontSize',fs)
 setaxes(ha(:),'XLabel', 'separation distance $r$ [km]');
 setaxes(ha(:),'YLabel', '$|SWH(x) - SWH(x+r)|$ [m]');
 % quietaxes(ha(2:end), 'y');
@@ -182,7 +177,8 @@ end
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 thisha = ha(1); axes(thisha); hold on; 
-cleanLegend(gca, 'northeast', 'NumColumns',3, 'Interpreter', 'latex')
+cleanLegend(gca, 'northeast', 'NumColumns',3, 'Interpreter', 'latex', 'FontSize', fs-3)
 
 
 
+% savejpg(gcf, 'fig_structurefunction_hs', [base_path(1:12) 'desktop/'], 'on')
