@@ -1,4 +1,16 @@
-[[frozen on date of publication]]
+[[NOTE: frozen on date of publication]]
+
+Need to create set_env.m function, where the following are defined:
+      %%% define and add paths
+      base_path = /path/to/uppermost/local/directory/;
+      local_path = [base_path '/swot_swh_calval/swot_swh_fxns/'];
+      addpath([local_path 'swh_fxns/matlab/'])
+      addpath([local_path 'fig_code/addfxns/'])
+      swot_fpath = /path/to/SWOT/files/;
+      
+      %%% add data
+      % load coastline_labeled.mat and nicejet.mat
+
 
 Figure N
 filname
