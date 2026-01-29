@@ -4,7 +4,7 @@ function [SWOT] = load_swot(fpath, varargin)
 
 %% SET PARAMETERS
 %%% set file heirarchies
-fproc_heirarchy = {'PIC2', 'PGC0', 'PIC0', 'PID0'};
+fproc_heirarchy = {'PIC2', 'PGC0', 'PGD0', 'PIC0', 'PID0'};
 add_expert_fields = 0; 
 fstr = '*SWOT*.nc';
 verbose = 1;
@@ -34,6 +34,7 @@ addParameter(p, 'omit', {});
 addParameter(p, 'include', {});
 addParameter(p, 'add', '');
 addParameter(p, 'combine', 0);
+addParameter(p, 'orientation', '');
 parse(p, varargin{:});
 fstr = p.Results.search;
 choosepass = p.Results.pass;
@@ -43,6 +44,7 @@ omitflds = p.Results.omit;
 incflds = p.Results.include;
 addopt = p.Results.add;
 combineswaths = p.Results.combine;
+orientation = p.Results.orientation;
 
 if ~isempty(addopt)
     if contains(addopt, 'expert')
@@ -131,6 +133,18 @@ end
 if ~isnan(choosecycle)
     tt = intersect(tt, find(fcycle==str2num(choosecycle)));
 end
+if ~isempty(orientation)
+    % odd = ascending
+    % even = descending
+    if strcmp(orientation, 'ascending')
+        ii = find(mod(fpass,2)==1);
+        tt = intersect(tt,ii);
+    elseif strcmp(orientation, 'descending')
+        ii = find(mod(fpass,2)==0);
+        tt = intersect(tt,ii);
+    end
+end
+
 if isempty(tt)
     error('no files available')
 end
@@ -138,8 +152,10 @@ A = {fnames, ftimes, fcycle, fpass, fproc, fext};
 A = cellfun(@(x) x(tt), A, 'Un', 0); 
 [fnames, ftimes, fcycle, fpass, fproc, fext] = A{:};
 
+
+
 %%
-if sum(cellfun(@(x) contains(x, 'Expert'), {fnames.name}))==length({fnames.name})
+if sum(cellfun(@(x) contains(x, 'Expert') | contains(x, 'WindWave'), {fnames.name}))==length({fnames.name})
     swottype = 'Expert';
 elseif sum(cellfun(@(x) contains(x, 'Unsmoothed'), {fnames.name}))==length({fnames.name})
     swottype = 'Unsmoothed'; 
@@ -148,6 +164,7 @@ else
 end
 
 %% load SWOT
+Ny = NaN;
 utimes = unique(ftimes); 
 N = length(utimes); 
 si = 1; 
@@ -161,12 +178,18 @@ while ti <= N
     dispv(1, ['      time index: ' num2str(ti) '/' num2str(N)])
 
     ff = find(ftimes==t0); FF = ff; 
-    Fexts = cellfun(@(x) str2num(x(end-4:end-3)), {fnames(FF).name}); 
-    Fprocs = fproc(FF);
-    [~, ~, miproc] = intersect(Fprocs, fproc_heirarchy);
-    mpi = find(strcmp(Fprocs, fproc_heirarchy(min(miproc))));
-    [~, mai] = max(Fexts(mpi)); mi = mpi(mai); 
-    fi = FF(mi);
+    if contains({fnames(FF).name}, 'SWOT_L3')
+        fi = FF(1);
+    else
+        Fexts = cellfun(@(x) str2num(x(end-4:end-3)), {fnames(FF).name}); 
+        Fprocs = fproc(FF);
+        [~, ~, miproc] = intersect(Fprocs, fproc_heirarchy);
+        mpi = find(strcmp(Fprocs, fproc_heirarchy(min(miproc))));
+        [~, mai] = max(Fexts(mpi)); mi = mpi(mai); 
+        fi = FF(mi);
+    end
+
+    fnames(fi).folder = [fnames(fi).folder '/'];
 
     if length(FF)>1 % say what happened if you had to choose a file
         dispv(verbose, ['      extensions:']); cellfun(@(x) dispv(verbose, ['      - ' x]), fext(FF))
@@ -181,16 +204,28 @@ while ti <= N
     limsargin = {};
     try
         if strcmp(swottype, 'Expert')
-            lon = ncread([fpath fnames(fi).name], 'longitude')-360;
-            lat = ncread([fpath fnames(fi).name], 'latitude');
-            info = ncinfo([fpath fnames(fi).name], 'latitude'); dims = [info.Dimensions.Length]; 
+            lon = ncread([fnames(fi).folder fnames(fi).name], 'longitude')-360;
+            lat = ncread([fnames(fi).folder fnames(fi).name], 'latitude');
+            info = ncinfo([fnames(fi).folder fnames(fi).name], 'latitude'); dims = [info.Dimensions.Length]; 
         elseif strcmp(swottype, 'Unsmoothed')
-            lon = ncread([fpath fnames(fi).name], '/right/longitude')-360;
-            lat = ncread([fpath fnames(fi).name], '/right/latitude');
-            info = ncinfo([fpath fnames(fi).name], '/right/latitude'); dims = [info.Dimensions.Length]; 
+            lon = ncread([fnames(fi).folder fnames(fi).name], '/right/longitude')-360;
+            lat = ncread([fnames(fi).folder fnames(fi).name], '/right/latitude');
+            info = ncinfo([fnames(fi).folder fnames(fi).name], '/right/latitude'); dims = [info.Dimensions.Length]; 
         end
-        inbounds = (isin(lon, lonlims + [-1 1].*0.5)  & isin(lat, latlims + [-1 1].*0.5));
+        inbounds = (isin(lon, lonlims, 'inclusive')  & isin(lat, latlims, 'inclusive'));
         yy = find(sum(inbounds,1)); xx = find(sum(inbounds,2));
+        % if si==1
+        %     latlims = minmax(lat(xx,yy));
+        %     lonlims = minmax(lon(xx,yy));
+        % end
+
+
+        % if isnan(Ny); Ny = length(yy); end
+        % if length(yy)~=Ny
+        %     if length(yy) > Ny; 
+        %         % yy = yy
+        % end
+
         start = [min(xx) min(yy)]; count = [range(xx) range(yy)]+1; stride = [1 1];
 
         % if isempty(xx) | isempty(yy)
@@ -218,7 +253,7 @@ while ti <= N
 
     %%% NOW FINALLY LOADING SWOT! 
     try
-        swot = load_any_nc([fpath fnames(fi).name], limsargin{:}, 'omit', omitflds); 
+        swot = load_any_nc([fnames(fi).folder fnames(fi).name], limsargin{:}, 'omit', omitflds); 
     catch
         ti = ti + 1; 
         dispv(verbose, ['      ERROR: data read error *** *** ***']);
@@ -274,7 +309,7 @@ while ti <= N
 
     if isempty(swot.time); ti = ti + 1; dispv(verbose, ['      ERROR: no data *** *** ***']); continue; end
     swot.fname = fnames(fi).name;
-    swot.fpath = fpath;
+    swot.fpath = fnames(fi).folder;
     try
         [swot.t0, swot.cycle, swot.pass, swot.processing, swot.orientation, swot.angle] = get_swot_info(swot, swot.fname);
     end
@@ -282,6 +317,7 @@ while ti <= N
     %%% combining left and right swaths
     if strcmp(swottype, 'Unsmoothed') & combineswaths
         swot = combine_leftright(swot);
+        % remove 1D
         swot = rmfield(swot, {'left_polarization_karin','left_time_tai', 'right_polarization_karin', 'right_time_tai'});
     end
 
@@ -297,6 +333,32 @@ if ~exist('SWOT'); error('NO DATA AVAILABLE'); end
 
 ii = find(~cellfun(@isempty, {SWOT(:).time}));
 SWOT = SWOT(ii);
+
+
+%% cleaning unsmoothed length
+if strcmp(swottype, 'Unsmoothed')
+
+    passes = unique([SWOT.pass]);
+    for pai=1:length(passes)
+        ss = find([SWOT.pass]==passes(pai));
+        fldnms = fieldnames(SWOT(ss(1)));
+        dims = cellfun(@(fld) size(SWOT(ss(1)).(fld)) , fldnms, 'Un', 0);
+        ii = find(~cellfun(@(dim) sum(dim<=2), dims));
+        fldnms = fldnms(ii);
+        Ny = cellfun(@size, {SWOT(ss).(fldnms{1})}, 'Un', 0); Ny = cellfun(@(x) x(2), Ny);
+        Ny = min(Ny); 
+        
+        for si=ss
+            for fi=1:length(fldnms)
+                fldnm = fldnms{fi};
+                tmp = SWOT(si).(fldnm);
+                SWOT(si).(fldnm) = tmp(:,1:Ny); clear tmp;
+            end
+        end
+    end
+
+
+end
 
 
 %% adding expert fields to unsmoothed
@@ -391,6 +453,10 @@ if strcmp(swottype, 'Unsmoothed') & add_expert_fields
     end
     toc
 end
+
+%% 
+
+
 
 
 
