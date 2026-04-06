@@ -3,8 +3,8 @@ fname =     'SWOT_L2_LR_SSH_Unsmoothed_009_433_20240119T135934_20240119T145101_P
 swot = load_any_nc([fpath fname]); 
 
 
-lonlims = 167.481015 + [-1 1].*10; lonlims = lonlims - 360;
-latlims = 9.431479 + [-1 1].*10;
+lonlims = 167.481015 + [-1 1].*10; 
+latlims = 9.431479 + [-1 1].*30;
 
 figure(802); clf; hold on; 
 grps = {'left_', 'right_'};
@@ -20,7 +20,7 @@ for grp = grps
     msk = ones(size(Z)); 
     msk(swot.([grp 'ssha_karin_2_qual']) > 0) = NaN;
 
-    mskvar = deg2km(mag(swot.([grp 'latitude_uncert']), swot.([grp 'longitude_uncert']))).*1000;    
+    mskvar = mag(swot.([grp 'latitude_uncert']), swot.([grp 'longitude_uncert']));    
     msk(mskvar > 2.*repmat(nanmedian(mskvar,2), [1, size(mskvar,2)])) = NaN; 
     % i use the lat/lon uncertainty to mask out bad pixels that for some reason aren't flagged in the _qual fields
     % here i'm masking out any pixels that have more than 2x the along-track median uncertainty
@@ -31,5 +31,5 @@ for grp = grps
     X = X(:,ii); Y = Y(:,ii); Z = Z(:,ii); 
     pcolor(X,Y,Z); shading flat;
 end
-caxis([-1 1].*0.4); 
+caxis([-1 1].*0.6); 
 colormap(redblue)
