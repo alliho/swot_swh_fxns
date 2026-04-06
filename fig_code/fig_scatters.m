@@ -217,13 +217,14 @@ for hi=1:length(ha)
         end
     elseif procopt & ~scatopt & contains(fldnm, 'karin')
         nn = find(cellfun(@(x) strcmp(x, 'PIC0') | strcmp(x, 'PGC0'), proc)); 
-        procname = 'P..0';
-        nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
+        % procname = 'P..0';
+        % nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
         labstr = 'Version C'
         scatter(x(nn), y(nn),6, 'k', 'filled', 'DisplayName', labstr, 'MarkerFaceAlpha', 0.6)
 
-        procname = 'PIC2';
-        nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
+        % procname = 'PIC2';
+        % nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
+        nn = find(cellfun(@(x) strcmp(x, 'PIC2') | strcmp(x, 'PGD0'), proc)); 
 
         if ~isempty(nn)
             if showprocopt 
