@@ -14,6 +14,7 @@ verbose = 1;
 if ~isempty(varargin)
     if length(varargin)==2 & sum(cellfun(@isnumeric,varargin(1:2)))==2
         [lonlims, latlims] = varargin{1:2};
+        varargin = varargin(3:end);
     elseif length(varargin)>=3 
         if sum(cellfun(@isnumeric,varargin(1:3)))==3
             [lonlims, latlims, daterange] = varargin{1:3};
@@ -189,7 +190,7 @@ while ti <= N
         fi = FF(mi);
     end
 
-    fnames(fi).folder = [fnames(fi).folder '/'];
+    % fnames(fi).folder = [fnames(fi).folder '/'];
 
     if length(FF)>1 % say what happened if you had to choose a file
         dispv(verbose, ['      extensions:']); cellfun(@(x) dispv(verbose, ['      - ' x]), fext(FF))
@@ -198,20 +199,37 @@ while ti <= N
     dispv(verbose, ['      file index: ' num2str(fi) '/' num2str(length(fnames))])
     tic
     
-
+    fname = fullfile(fnames(fi).folder, fnames(fi).name);
 
     %%% TEST TO SEE IF WITHIN LIMITS and CHOOSE RANGE TO LOAD
     limsargin = {};
     try
+        %%
         if strcmp(swottype, 'Expert')
-            lon = ncread([fnames(fi).folder fnames(fi).name], 'longitude')-360;
-            lat = ncread([fnames(fi).folder fnames(fi).name], 'latitude');
-            info = ncinfo([fnames(fi).folder fnames(fi).name], 'latitude'); dims = [info.Dimensions.Length]; 
+            lon = ncread(fname, 'longitude')-360;
+            lat = ncread(fname, 'latitude');
+            info = ncinfo(fname, 'latitude'); dims = [info.Dimensions.Length]; 
         elseif strcmp(swottype, 'Unsmoothed')
-            lon = ncread([fnames(fi).folder fnames(fi).name], '/right/longitude')-360;
-            lat = ncread([fnames(fi).folder fnames(fi).name], '/right/latitude');
-            info = ncinfo([fnames(fi).folder fnames(fi).name], '/right/latitude'); dims = [info.Dimensions.Length]; 
+            % dispv(verbose, 'loading lat lon'); fi
+            % try; ncdisp([fnames(fi).folder fnames(fi).name], '/right/longitude'); end
+            % try; ncdisp([fnames(fi).folder fnames(fi).name]); end
+            % [fnames(fi).folder fnames(fi).name]
+            % tmp = ncdisp()
+            % ncid = netcdf.open(fname,'NOWRITE');
+            % netcdf.close(ncid);
+            % double(fname(end-20:end))
+            % fname = sprintf('%s', fnames(fi).folder, filesep, fnames(fi).name);
+            pause(0.1)
+            % info = h5read(fname, '/right/latitude'); dims = [info.Dimensions.Length]; 
+            % h5read(fname, '/right/longitude') - 360;
+            lon = ncread(fname, '/right/longitude')-360;
+            lat = ncread(fname, '/right/latitude');
+            info = ncinfo(fname, '/right/latitude'); dims = [info.Dimensions.Length]; 
+
+            % dispv(verbose, 'loaded lat lon')
         end
+        
+
         inbounds = (isin(lon, lonlims, 'inclusive')  & isin(lat, latlims, 'inclusive'));
         yy = find(sum(inbounds,1)); xx = find(sum(inbounds,2));
         % if si==1
@@ -219,7 +237,7 @@ while ti <= N
         %     lonlims = minmax(lon(xx,yy));
         % end
 
-
+        % %%
         % if isnan(Ny); Ny = length(yy); end
         % if length(yy)~=Ny
         %     if length(yy) > Ny; 
@@ -228,11 +246,7 @@ while ti <= N
 
         start = [min(xx) min(yy)]; count = [range(xx) range(yy)]+1; stride = [1 1];
 
-        % if isempty(xx) | isempty(yy)
-        % 
-        % 
-        % end
-
+        
         % don't limit xx (cross track range)
         start(1) = 1; count(1) = dims(1);
 
@@ -253,7 +267,7 @@ while ti <= N
 
     %%% NOW FINALLY LOADING SWOT! 
     try
-        swot = load_any_nc([fnames(fi).folder fnames(fi).name], limsargin{:}, 'omit', omitflds); 
+        swot = load_any_nc(fname, limsargin{:}, 'omit', omitflds); 
     catch
         ti = ti + 1; 
         dispv(verbose, ['      ERROR: data read error *** *** ***']);
@@ -367,11 +381,19 @@ end
 if strcmp(swottype, 'Unsmoothed') & add_expert_fields
     disp('----- adding Expert fields to Unsmoothed ')
     %%% only field names:
-    fldnms = {'height_cor_xover','mean_sea_surface_cnescls', 'solid_earth_tide', 'ocean_tide_fes', 'internal_tide_hret','pole_tide', 'dac', 'cross_track_distance'};
+    fldnms = {'height_cor_xover','mean_sea_surface_cnescls', 'solid_earth_tide', 'ocean_tide_fes', 'ocean_tide_non_eq', 'internal_tide_hret','pole_tide', 'dac', 'cross_track_distance', 'depth_or_elevation'};
+    [~, ff] = setxor(fldnms, fieldnames(SWOT));
+    fldnms = fldnms(ff);
 
     fstr = strrep(fstr, 'Unsmoothed', 'Expert');
+    fi = length(fstr);
+    if ~contains(fstr, '*')
+        ii = find(fstr=='_'); %fstr = [fstr(1:ii(7)) '*']
+        fi = ii(7);
+    end
+    
     fpath = strrep(fpath, 'unsmoothed/', '');
-    [SWOT_ex] = load_swot(fpath, lonlims, latlims, daterange, varargin{:}, 'search', fstr, 'verbose',0, 'include', [{'latitude', 'longitude', 'time'} fldnms]);
+    [SWOT_ex] = load_swot(fpath, lonlims, latlims, daterange, varargin{:}, 'search', [fstr(1:fi) '*'], 'verbose',0, 'include', [{'latitude', 'longitude', 'time'} fldnms]);
     t0_ex = [SWOT_ex.t0];
     t0 = [SWOT.t0];
     [~, ii] = intersect(round(t0.*24)./24, round(t0_ex.*24)./24);

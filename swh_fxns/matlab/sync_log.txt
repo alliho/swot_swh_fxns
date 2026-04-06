@@ -1,4 +1,6 @@
-load_swot.m synced on Thu Jan 29 12:30:33 PST 2026
-process_swot.m synced on Thu Jan 29 12:30:33 PST 2026
-colocate_swot.m synced on Thu Jan 29 12:30:33 PST 2026
-correct_swotswh.m synced on Thu Jan 29 12:30:33 PST 2026
+load_swot.m synced on Wed Apr  1 18:58:17 PDT 2026
+colocate_swot.m synced on Wed Apr  1 18:58:17 PDT 2026
+correct_swotswh.m synced on Wed Apr  1 18:58:17 PDT 2026
+Warning: nanfilter2.m not found in /Users/ajho/Documents/myrepos/gitjpl/swotfxns
+correct_swotswh_offline.m synced on Wed Apr  1 18:58:17 PDT 2026
+process_swot.m synced on Wed Apr  1 18:58:17 PDT 2026
