@@ -5,7 +5,7 @@
 *.mat
 *.asv
 /data/readme.md
-
+/figs/
 /fig_code/addfxns/smpl_syncs.txt
 
 

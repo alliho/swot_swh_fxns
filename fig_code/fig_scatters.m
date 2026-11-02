@@ -16,37 +16,21 @@ run set_env.m
 
 % tight_subplot.m
 % AddLetters2Plots.m
+run('def_dependencies.m')
 
 
 %% load
-
+% "/Users/alliho/Documents/JPL/data/processed/colocated_data/NDBC_x_SWOT_science.mat"
 clear data
-fpath = [local_path '/data/'];
+fpath = [base_path '/data/processed/colocated_data/']
 tmp = load([fpath 'NDBC_x_SWOT_science.mat']); data(1) = tmp.data;
-% tmp = load([fpath 'GNSS_x_SWOT_calval.mat']); data(2) = tmp.data;
-tmp = load([fpath 'GNSS_x_SWOT_calval_version_D.mat']); data(2) = tmp.data;
-% tmp = load([fpath 'NDBC_x_SWOT_calval.mat']); data(3) = tmp.data;
+tmp = load([fpath 'GNSS_x_SWOT_calval.mat']); data(2) = tmp.data;
+tmp = load([fpath 'NDBC_x_SWOT_calval.mat']); data(3) = tmp.data;
+fpath = [local_path '/data/']; tmp = load([fpath 'GNSS_x_SWOT_calval_version_D.mat']); data(4) = tmp.data;
 data(1).obstype = 'buoys';
 data(2).obstype = 'moorings';
 data(3).obstype = 'buoys';
-
-%% define stats
-% 
-% getnn = @(x,y) find(~isnan(x) & ~isnan(y));
-% getnnn = @(x,y,z) find(~isnan(x) & ~isnan(y) & ~isnan(z));
-% biasfxn = @(x,y) nanmean((y-x));
-% rmsefxn = @(x,y) sqrt(nanmean((x-y).^2));
-% crmsefxn = @(x,y) sqrt(rmsefxn(x,y).^2 - biasfxn(x,y).^2);
-% normrmsefxn = @(x,y) sqrt(nanmean((x-y).^2))./nanmean(abs(x));
-% absrmsefxn = @(x,y) sqrt(nanmean((abs(x)-abs(y)).^2));
-% nfxn = @(x,y) sum(~isnan(x) & ~isnan(y));
-% ccfxn = @(x,y) mode(diag(flipud(corrcoef(x(getnn(x,y)),y(getnn(x,y))))));
-% sifxn = @(x,y) 1./nanmean(x(getnn(x,y))) .* sqrt( 1./length(x(getnn(x,y))) .* nansum( ( (y(getnn(x,y))-nanmean(y(getnn(x,y)))) - (x(getnn(x,y))-nanmean(x(getnn(x,y))))   ).^2 ) );;
-% linfxn = @(x,y) polyfit(x(getnn(x,y)), y(getnn(x,y)), 1);
-% getind = @(var,i) var(i); 
-% intcptfxn = @(x,y) getind(linfxn(x,y),2); 
-% slpfxn = @(x,y) getind(linfxn(x,y),1); 
-% slp0fxn = @(x,y) y(getnn(x,y))/x(getnn(x,y));
+data(4).obstype = 'moorings Version D';
 
 %% [save] JUST SCATTER | buoys and moorings | with nadir? no model 
 
@@ -73,14 +57,21 @@ fldnms = {'swh_nadir_altimeter','swh_nadir_altimeter', 'swh_karin_uncorr_patch',
 % fldnms = {'swh_nadir_altimeter','swh_nadir_altimeter', 'swh_karin_uncorr', 'swh_karin_uncorr'};
 fldlbs = {'SWOT nadir','SWOT nadir', 'SWOT KaRIn', 'SWOT KaRIn'};
 
+dlabs = {'GNSS buoy', 'coastal buoy', 'GNSS buoy', 'coastal buoy','GNSS buoy',}
+dds = [2 1 2 1 4];
+fldnms = {'swh_nadir_altimeter','swh_nadir_altimeter', 'swh_karin_uncorr_patch', 'swh_karin_uncorr_patch', 'swh_karin_uncorr_patch'};
+fldlbs = {'SWOT nadir','SWOT nadir', 'SWOT KaRIn', 'SWOT KaRIn', 'SWOT KaRIn'};
+
+
 
 
 qualflag = 1;
 uncflag = 1;
-fs = 15;
+fs = 14;
 % -------------------------------------------------------------------------
 figure(679174); clf; 
 setfigsize(gcf, [946         898])
+% setfigsize(gcf, [1         0.95])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 % oldha = tight_subplot(2, 4, [0.025 0.05], [0.11 0.05], [0.05 0.05]);
 % [ha] = reorg_tightsubplot(oldha, {[1 2],[4 5]+1, [3 7], [4 8
@@ -120,12 +111,16 @@ for hi=1:length(ha)
 end
 
 
-for hi=1:length(ha)
+for di=1:length(dds)
+    hi = di; 
     disp(hi)
     dd = dds(hi);
     xlb = dlabs{hi};
     fldnm = fldnms{hi};
     ylb = fldlbs{hi};
+
+    if dd==4; hi=3; end
+
     % -------------------------------------------------------------------------
     q = cell2mat(cellfun(@(x) x(:)', {data(dd).swh_karin_qual}, 'Un', 0));
     x = cell2mat(cellfun(@(x) x(:)', {data(dd).hs}, 'Un', 0));
@@ -187,7 +182,7 @@ for hi=1:length(ha)
     
     if contains(fldnm,'swh_karin') & correctopt
         corr = mdl(y, z); corr(isinf(corr)) = 0;
-        nn = find(cellfun(@(x) strcmp(x, 'PIC2'), proc)); 
+        nn = find(cellfun(@(x) contains(x, {'PIC2', 'PGD0'}), proc)); 
         corr(nn) = 0; 
         corr(isinf(corr)) = NaN;
         y = y - corr;
@@ -219,12 +214,14 @@ for hi=1:length(ha)
         nn = find(cellfun(@(x) strcmp(x, 'PIC0') | strcmp(x, 'PGC0'), proc)); 
         % procname = 'P..0';
         % nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
-        labstr = 'Version C'
-        scatter(x(nn), y(nn),6, 'k', 'filled', 'DisplayName', labstr, 'MarkerFaceAlpha', 0.6)
-
+        
+        if ~isempty(nn); 
+            labstr = 'Version C'
+            scatter(x(nn), y(nn),6, 'k', 'filled', 'DisplayName', labstr, 'MarkerFaceAlpha', 0.6)
+        end
         % procname = 'PIC2';
         % nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
-        nn = find(cellfun(@(x) strcmp(x, 'PIC2') | strcmp(x, 'PGD0'), proc)); 
+        nn = find(cellfun(@(x) contains(x, {'PIC2', 'PGD0'}), proc)); 
 
         if ~isempty(nn)
             if showprocopt 
@@ -268,23 +265,26 @@ for hi=1:length(ha)
             procname = 'P..0';
             nn = ~cellfun(@(x) ~isempty(regexp(x,procname)), proc); nn = find(nn==0); 
         end
-        xdata = x(nn); ydata = y(nn);
-        sts.n = nfxn(xdata,ydata);
-        sts.cc = ccfxn(xdata,ydata);
-        sts.rmse = rmsefxn(xdata,ydata);
-        sts.crmse = crmsefxn(xdata,ydata);
-        sts.bias = biasfxn(xdata,ydata);
-        sts.SI = sifxn(xdata,ydata);
-        x0 = sum(thisha.Position([1 3])) + dx; y0 = thisha.Position(2) + dy; 
+        nn = find(~cellfun(@(x) contains(x, {'PIC2', 'PGD0'}), proc)); 
+        if ~isempty(nn)
+            xdata = x(nn); ydata = y(nn);
+            sts.n = nfxn(xdata,ydata);
+            sts.cc = ccfxn(xdata,ydata);
+            sts.rmse = rmsefxn(xdata,ydata);
+            sts.crmse = crmsefxn(xdata,ydata);
+            sts.bias = biasfxn(xdata,ydata);
+            sts.SI = sifxn(xdata,ydata);
+            x0 = sum(thisha.Position([1 3])) + dx; y0 = thisha.Position(2) + dy; 
+    
+            textbypos(x0,y0,...
+                {   ['n$=$' num2str(sts.n)], ...
+                    ['bias$=$' num2str(round(nanmean([sts.bias]),2)) 'm'], ...
+                    ['cRMSE$=$' num2str(round(nanmean([sts.crmse   ]),2)) 'm'],...
+                    ['CC$=$' num2str(round(nanmean([sts.cc]),2))]}, ...
+                'interpreter', 'latex', 'VerticalAlignment','bottom', 'FontSize',fs-3);
+        end
 
-        textbypos(x0,y0,...
-            {   ['n$=$' num2str(sts.n)], ...
-                ['bias$=$' num2str(round(nanmean([sts.bias]),2)) 'm'], ...
-                ['cRMSE$=$' num2str(round(nanmean([sts.crmse   ]),2)) 'm'],...
-                ['CC$=$' num2str(round(nanmean([sts.cc]),2))]}, ...
-            'interpreter', 'latex', 'VerticalAlignment','bottom', 'FontSize',fs-3);
-
-        nn = find(cellfun(@(x) strcmp(x, 'PIC2'), proc)); 
+        nn = find(cellfun(@(x) contains(x, {'PIC2', 'PGD0'}), proc)); 
         if ~isempty(nn) & showprocopt & contains(fldnm, 'karin')
             xdata = x(nn); ydata = y(nn);
             sts.n = nfxn(xdata, ydata);
@@ -293,7 +293,7 @@ for hi=1:length(ha)
             sts.crmse = crmsefxn(xdata,ydata);
             sts.bias = biasfxn(xdata,ydata);
             sts.SI = sifxn(xdata,ydata);
-            x0 = sum(thisha.Position([1 3])) + dx - 0.1; y0 = thisha.Position(2) + dy; 
+            x0 = sum(thisha.Position([1 3])) + dx - 0.12; y0 = thisha.Position(2) + dy; 
 
             if showprocopt & contains(fldnm, 'karin')
             textbypos(x0,y0,...
@@ -313,7 +313,7 @@ for hi=1:length(ha)
 
     if ~isnan(x_nadir)
         col = [0.11 0.28 0.8]+[0.3 0.3 0.2];
-        scatter(x_nadir, y_nadir ,11, col,'filled', '^', 'DisplayName', '\Deltax < 2km')
+        scatter(x_nadir, y_nadir ,11, col,'filled', '^', 'DisplayName', '\Delta x < 2km')
         xdata = x_nadir; ydata = y_nadir;
         sts.n = nfxn(xdata,ydata);
         sts.cc = ccfxn(xdata,ydata);
@@ -321,7 +321,7 @@ for hi=1:length(ha)
         sts.crmse = crmsefxn(xdata,ydata);
         sts.bias = biasfxn(xdata,ydata);
         sts.SI = sifxn(xdata,ydata);
-        x0 = sum(thisha.Position([1 3])) + dx - 0.1; y0 = thisha.Position(2) + dy; 
+        x0 = sum(thisha.Position([1 3])) + dx - 0.12; y0 = thisha.Position(2) + dy; 
         
         textbypos(x0,y0,...
             {   ['n$=$' num2str(sts.n)], ...
@@ -356,4 +356,4 @@ if procopt; optstr = [optstr '_wproc']; end
 if addnadircenter; optstr = [optstr '_wcenternadir']; end
 
 
-% savejpg(gcf, ['fig_scatters'], [base_path(1:12) 'desktop/'], 'on')
+savejpg(gcf, ['fig_scatters'], [local_path 'figs/'], 'on')
