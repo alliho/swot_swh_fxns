@@ -70,7 +70,7 @@ uncflag = 1;
 fs = 14;
 % -------------------------------------------------------------------------
 figure(679174); clf; 
-setfigsize(gcf, [946         898])
+setfigsize(gcf, [894   830])
 % setfigsize(gcf, [1         0.95])
 % tight_subplot(Nh, Nw, [gap_h gap_w], [lower upper], [left right]) 
 % oldha = tight_subplot(2, 4, [0.025 0.05], [0.11 0.05], [0.05 0.05]);
